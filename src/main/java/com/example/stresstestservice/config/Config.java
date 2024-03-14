@@ -1,15 +1,16 @@
 package com.example.stresstestservice.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@RequiredArgsConstructor
 public class Config {
-    @Autowired
-    private RestTemplateBuilder restTemplateBuilder;
+
+    private final RestTemplateBuilder restTemplateBuilder;
 
     @Bean
     public RestTemplate restTemplate() {

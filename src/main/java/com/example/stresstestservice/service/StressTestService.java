@@ -4,12 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -20,35 +21,40 @@ public class StressTestService {
 
     private final RestTemplate restTemplate;
 
-    public void sendRequests(
+    public Long sendRequests(
             Integer parallelThreadQuantity,
-            Long cycleQuantity,
+            Integer cycleQuantity,
             String endpoint,
             HttpMethod httpMethod,
-            HttpEntity<?> requestObject) throws InterruptedException {
+            HttpEntity<?> requestObject){
 
         cyclicBarrier = new CyclicBarrier(parallelThreadQuantity);
 
-        log.info("Created endpoint to send requests: {}",endpoint);
-        log.info("--- Started sending requests ---");
-
+        log.info("--- Started sending requests to {} ---", endpoint);
+        AtomicInteger successfulRequestQuantity = new AtomicInteger(0);
         for (int j = 0; j < cycleQuantity; j++) {
             CountDownLatch countDownLatch = new CountDownLatch(parallelThreadQuantity);
-
             for (int i = 0; i < parallelThreadQuantity; i++) {
                 new Thread(() -> {
                     try {
                         cyclicBarrier.await();
-                        ResponseEntity<?> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class);
-                        log.info("Request Status {}",exchange.getStatusCode());
+                        HttpStatusCode statusCode = restTemplate.exchange(endpoint, httpMethod, requestObject, Void.class).getStatusCode();
+                        log.info("{} Request Status {}", endpoint, statusCode);
+                        if (statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
+                            successfulRequestQuantity.getAndIncrement();
+                        }
                     } catch (Exception e) {
-                        log.info("Exception: {} Message: {}",e.getClass().getName(),e.getMessage());
+                        log.info("Exception: {} Message: {}", e.getClass().getName(), e.getMessage());
                     }
                     countDownLatch.countDown();
                 }).start();
             }
-
-            countDownLatch.await();
+            try{
+                countDownLatch.await();
+            }catch (InterruptedException e){
+                log.info("{}",e.getMessage());
+            }
         }
+        return successfulRequestQuantity.longValue();
     }
 }
