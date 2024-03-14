@@ -36,7 +36,7 @@ public class StressTestService {
             new Thread(() -> {
                 try {
                     cyclicBarrier.await();
-                    ResponseEntity<?> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class,pathVariables);
+                    ResponseEntity<Void> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class,pathVariables);
                     log.info("Request Status {}",exchange.getStatusCode());
                 } catch (Exception e) {
                     log.info("Exception: {} Message: {}",e.getClass().getName(),e.getMessage());
