@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
 @Service
@@ -21,52 +22,33 @@ public class StressTestService {
 
     public void sendRequests(
             Integer parallelThreadQuantity,
-            Long requestQuantity,
+            Long cycleQuantity,
             String endpoint,
             HttpMethod httpMethod,
-            HttpEntity<?> requestObject,
-            Object... pathVariables) {
+            HttpEntity<?> requestObject) throws InterruptedException {
 
         cyclicBarrier = new CyclicBarrier(parallelThreadQuantity);
 
         log.info("Created endpoint to send requests: {}",endpoint);
         log.info("--- Started sending requests ---");
 
-        for (int i = 0; i < requestQuantity; i++) {
-            new Thread(() -> {
-                try {
-                    cyclicBarrier.await();
-                    ResponseEntity<Void> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class,pathVariables);
-                    log.info("Request Status {}",exchange.getStatusCode());
-                } catch (Exception e) {
-                    log.info("Exception: {} Message: {}",e.getClass().getName(),e.getMessage());
-                }
-            }).start();
-        }
-    }
+        for (int j = 0; j < cycleQuantity; j++) {
+            CountDownLatch countDownLatch = new CountDownLatch(parallelThreadQuantity);
 
-    public void sendRequests(
-            Integer parallelThreadQuantity,
-            Long requestQuantity,
-            String endpoint,
-            HttpMethod httpMethod,
-            HttpEntity<?> requestObject) {
+            for (int i = 0; i < parallelThreadQuantity; i++) {
+                new Thread(() -> {
+                    try {
+                        cyclicBarrier.await();
+                        ResponseEntity<?> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class);
+                        log.info("Request Status {}",exchange.getStatusCode());
+                    } catch (Exception e) {
+                        log.info("Exception: {} Message: {}",e.getClass().getName(),e.getMessage());
+                    }
+                    countDownLatch.countDown();
+                }).start();
+            }
 
-        cyclicBarrier = new CyclicBarrier(parallelThreadQuantity);
-
-        log.info("Created endpoint to send requests: {}",endpoint);
-        log.info("--- Started sending requests ---");
-
-        for (int i = 0; i < requestQuantity; i++) {
-            new Thread(() -> {
-                try {
-                    cyclicBarrier.await();
-                    ResponseEntity<?> exchange = restTemplate.exchange(endpoint, httpMethod, requestObject,Void.class);
-                    log.info("Request Status {}",exchange.getStatusCode());
-                } catch (Exception e) {
-                    log.info("Exception: {} Message: {}",e.getClass().getName(),e.getMessage());
-                }
-            }).start();
+            countDownLatch.await();
         }
     }
 }

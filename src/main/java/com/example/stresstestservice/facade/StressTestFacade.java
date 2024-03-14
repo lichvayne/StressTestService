@@ -16,14 +16,14 @@ public class StressTestFacade {
 
     private final StressTestService stressTestService;
 
-    public void testUsersService(String url, Integer port, String path, String httpMethod, String requestBody, Integer parallelThreadQuantity, Long requestQuantity, Object... pathVariables) {
+    public void testUsersService(String url, Integer port, String path, String httpMethod, String requestBody, Integer parallelThreadQuantity, Long cycleQuantity) throws InterruptedException {
         StringBuilder endpoint = new StringBuilder();
-        endpoint.append(url).append(":").append(port).append(path).append("/{pathVariables}");
+        endpoint.append(url).append(":").append(port).append(path);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-        stressTestService.sendRequests(parallelThreadQuantity, requestQuantity, endpoint.toString(), HttpMethod.valueOf(httpMethod), requestEntity,pathVariables);
+        stressTestService.sendRequests(parallelThreadQuantity, cycleQuantity, endpoint.toString(), HttpMethod.valueOf(httpMethod), requestEntity);
     }
 }

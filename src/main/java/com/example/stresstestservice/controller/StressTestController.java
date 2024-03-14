@@ -20,10 +20,9 @@ public class StressTestController {
             @RequestParam("path") String path,
             @RequestParam("http_method") String httpMethod,
             @RequestParam("parallel_thread_quantity") Integer parallelthreadquantity,
-            @RequestParam("request_quantity") Long requestQuantity,
-            @RequestBody(required = false) String requestBody,
-            @RequestParam(value = "path_variables",required = false) Object... pathVariables) {
+            @RequestParam("cycle_quantity") Long cycleQuantity,
+            @RequestBody(required = false) String requestBody) throws InterruptedException {
         log.info("Json Request Body: {}",requestBody);
-        stressTestFacade.testUsersService(url, port, path, httpMethod, requestBody, parallelthreadquantity, requestQuantity, pathVariables);
+        stressTestFacade.testUsersService(url, port, path, httpMethod, requestBody, parallelthreadquantity, cycleQuantity);
     }
 }
