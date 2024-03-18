@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StressTestService {
 
     private CyclicBarrier cyclicBarrier;
-
     private final RestTemplate restTemplate;
 
     public Long sendRequests(
@@ -26,10 +25,9 @@ public class StressTestService {
             Integer cycleQuantity,
             String endpoint,
             HttpMethod httpMethod,
-            HttpEntity<?> requestObject){
+            HttpEntity<?> requestObject) {
 
         cyclicBarrier = new CyclicBarrier(parallelThreadQuantity);
-
         log.info("--- Started sending requests to {} ---", endpoint);
         AtomicInteger successfulRequestQuantity = new AtomicInteger(0);
         for (int j = 0; j < cycleQuantity; j++) {
@@ -39,7 +37,6 @@ public class StressTestService {
                     try {
                         cyclicBarrier.await();
                         HttpStatusCode statusCode = restTemplate.exchange(endpoint, httpMethod, requestObject, Void.class).getStatusCode();
-                        log.info("{} Request Status {}", endpoint, statusCode);
                         if (statusCode.is2xxSuccessful() || statusCode.is3xxRedirection()) {
                             successfulRequestQuantity.getAndIncrement();
                         }
@@ -49,10 +46,10 @@ public class StressTestService {
                     countDownLatch.countDown();
                 }).start();
             }
-            try{
+            try {
                 countDownLatch.await();
-            }catch (InterruptedException e){
-                log.info("{}",e.getMessage());
+            } catch (InterruptedException e) {
+                log.info("{}", e.getMessage());
             }
         }
         return successfulRequestQuantity.longValue();
